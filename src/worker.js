@@ -38,6 +38,7 @@ class Worker {
 
     if (!this.httpServer.cache) { this.httpServer.cache = this.cache; }
     if (!this.httpServer.gzip) { this.httpServer.gzip = this.gzip; }
+    if (!this.httpServer.sandboxGlobals) { this.httpServer.sandboxGlobals = this.sandboxGlobals; }
     if (!this.httpServer.distPath) { this.httpServer.distPath = this.distPath; }
     if (!this.httpServer.ui) { this.httpServer.ui = this.ui; }
   }
