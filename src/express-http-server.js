@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require('express');
+const { StringDecoder } = require('string_decoder');
 const basicAuth = require('./basic-auth');
 
 function noop() {}
@@ -63,6 +64,15 @@ class ExpressHTTPServer {
 
     app.get('/*', fastbootMiddleware);
 
+    // HACK: When using `chunkedResponse` we have to explicitly set the content
+    // type otherwise the header is missing.
+    // app.use(function(req, res, next) {
+    //   if (!req.url.includes('.')) {
+    //     res.type('html');
+    //   }
+    //   next();
+    // });
+
     this.afterMiddleware(app);
 
     return new Promise(resolve => {
@@ -100,12 +110,13 @@ class ExpressHTTPServer {
     let prevWrite = res.write;
     let prevEnd = res.end;
     let chunks = [];
+    let decoder = new StringDecoder('utf8');
     let cache = this.cache;
     let ui = this.ui;
 
     let pushChunk = (chunk) => {
       if (!chunk) return;
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      chunks.push(Buffer.isBuffer(chunk) ? decoder.write(chunk) : chunk);
     };
 
     res.write = function(chunk) {
@@ -116,7 +127,7 @@ class ExpressHTTPServer {
     res.end = function(chunk) {
       pushChunk(chunk);
 
-      let body = Buffer.concat(chunks).toString();
+      let body = chunks.join('');
 
       cache.put(path, body, res)
         .then(() => {
